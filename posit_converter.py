@@ -42,8 +42,21 @@ def convert_int_to_bin(float_num, num_int_bits):
     print("bit_string before reversal: ", bit_string)
     if(len(bit_string) > num_int_bits):
         bit_string = bit_string[0:num_int_bits] #TODO: confirm if right substring
+
+
     new_string = reverse_string(bit_string)
     print("bit_string after reversal: ", new_string)
+
+    if(len(new_string) < num_int_bits):
+        diff = num_int_bits - len(new_string)
+        print("diff: ", diff)
+        padding_list = ['0']*diff
+        print("padding_list: ", padding_list)
+        padding = ''.join(padding_list)
+        print("padding: ", padding)
+        new_string = str(padding) + new_string
+        print("new_string: ", new_string)
+    
     return new_string
 
 def convert_fractional_decimal_to_bin(fractional_decimal, num_frac_bits):
@@ -153,7 +166,8 @@ def get_exponent_and_frac_bits(abso_val,useed,es,nbits, regime_length):
 
 #TODO: Reuse this function in big and small
 def get_string_bits_regular(abso_val,useed,es,nbits):
-    regime_length = 0
+    regime_length = 2
+    #regime_bits = '01'
     exponent_bits, fraction_bits = get_exponent_and_frac_bits(abso_val,useed,es,nbits, regime_length)
     return regime_length, exponent_bits, fraction_bits
 
@@ -203,6 +217,9 @@ def get_string_bits_small(abso_val, useed,es,nbits):
 
 def create_regime_bits_string(regime_length, expo_sign_bit):
     
+    if(regime_length == 0):
+        return ""
+    
     #reg_str = sign_bit
     reg_str = ""
     print("expo_sign_bit", expo_sign_bit)
@@ -243,13 +260,18 @@ def convert_float_to_posit(float_value, nbits, es):
 
     if(abso_val > useed):
         regime_length, exponent_bits, fraction_bits  = get_string_bits_big(abso_val, useed,es,nbits)
+        regime_bits_string = create_regime_bits_string(regime_length, expo_sign_bit) #TODO: check what happens when there's no regime
     elif(abso_val < 1):
         regime_length, exponent_bits, fraction_bits  = get_string_bits_small(abso_val, useed,es,nbits)
+        regime_bits_string = create_regime_bits_string(regime_length, expo_sign_bit) #TODO: check what happens when there's no regime
     else:
         regime_length,exponent_bits, fraction_bits = get_string_bits_regular(abso_val, useed,es,nbits)
+        regime_bits_string = '01'
+
+    #TODO - simplify this code to reduce redundancy
 
     print("regime_length: ", regime_length)
-    regime_bits_string = create_regime_bits_string(regime_length, expo_sign_bit) #TODO: check what happens when there's no regime
+
 
     print("regime_bits_string", regime_bits_string )
     print("exponent_bits", exponent_bits)
@@ -271,6 +293,18 @@ def convert_bin_to_int(bin_string):
     return sum
 
 def convert_bin_to_fraction(bin_string):
+    bin_string = reverse_string(bin_string)
+    len_bin = len(bin_string)
+    sum = 0
+    for i in range(len_bin):
+        ind_val = int(bin_string[i])
+        val = ind_val * (2**i)
+        sum += val
+    return sum
+
+def convert_bin_to_fraction_old(bin_string):
+    bin_string = reverse_string(bin_string)
+    
     len_bin = len(bin_string)
     sum = 0
     for i in range(len_bin):
@@ -288,6 +322,29 @@ def all_zero(posit_str):
 def twos_complement(posit_string):
     #TODO: implement twos_complement
     return posit_string
+
+def get_lengths(posit_string):
+    
+    print("\n***********************")
+    posit_string = posit_string[1:]
+    first_regim_num = int(posit_string[0])
+    print("first_regim_num: ", first_regim_num)
+    posit_string = posit_string[1:]
+    regime_length = 0
+    for i in range(len(posit_string)):
+        regime_length += 1
+        num = int(posit_string[i])
+        if(not num == first_regim_num):
+            break
+    if (first_regim_num == 0):
+        regime_sign = -1
+    elif(first_regim_num == 1):
+        regime_sign = 1
+
+    print("regime_sign: ",regime_sign)
+    print("***********************\n")
+
+    return regime_length, regime_sign
 
 #Reference: posit paper section 1.2
 def convert_posit_to_float(es, posit_string):
@@ -308,32 +365,75 @@ def convert_posit_to_float(es, posit_string):
     #print("es:", es)
     scale_power_or_useed = 2**(2**es)
     #print("scale_power_or_useed:", scale_power_or_useed)
-    scale_sign =  -1 if int(posit_string[es+1]) == 1 else 1
+    #scale_sign =  -1 if int(posit_string[es+1]) == 1 else 1
     #print("scale_sign * es: ", scale_sign * es)
-    first_scale_factor = scale_power_or_useed ** (scale_sign * es)
-    #print("first_scale_factor:", first_scale_factor)
     
-    end_exponent_bits_index = es+2+es
-    #print("end_exponent_bits_index", end_exponent_bits_index)
+    regime_length, regime_sign = get_lengths(posit_string)
     
-    exponent_bits = posit_string[int(es+2):int(end_exponent_bits_index)]
-    #print("exponent_bits: ", exponent_bits)
+    #TODO - Create scheme to detect if posit string contains no regime bits
+    #if(regime_length < posit_num_bits ):
+    #   regime_length = 0
+    
+    print("regime_length:", regime_length)
+    
+    first_scale_factor = 1
+    
+    if (regime_sign == -1): # A number whose regime exponent is negative e.g. 256 ^ -3
+        
+        regime_exponent = regime_sign * regime_length
+        
+        if (regime_length == 1 and regime_sign == -1 ):
+            regime_exponent = 0
+        
+        print("regime_exponent: ", regime_exponent)
+        first_scale_factor = scale_power_or_useed ** regime_exponent
+        print("scale_power_or_useed ** regime_exponent:", scale_power_or_useed, regime_exponent )
+        #print("scale_power_or_useed ** (regime_sign * regime_length +1): ", scale_power_or_useed, regime_sign, regime_length)
+    elif (regime_sign == 1): # A number whose regime exponent is positive e.g. 256 ^ 3
+        
+        regime_exponent = regime_length - 1
+        first_scale_factor = scale_power_or_useed ** regime_exponent
+        print("scale_power_or_useed ** regime_exponent:", scale_power_or_useed, regime_exponent )
+    
+    print("first_scale_factor:", first_scale_factor)
+
+    end_exponent_bits_index = regime_length+2+es
+    print("end_exponent_bits_index", end_exponent_bits_index)
+    
+    exponent_bits = posit_string[int(regime_length+2):int(end_exponent_bits_index)]
+    print("exponent_bits: ", exponent_bits)
 
     exponent_val = convert_bin_to_int(exponent_bits)
+    print("exponent_val: ", exponent_val)
     second_scale_factor = 2**exponent_val
+    print("second_scale_factor: ", second_scale_factor)
     fraction_bits = posit_string[end_exponent_bits_index:len(posit_string)]
-    #print("fraction_bits: ", fraction_bits)
+    print("fraction_bits: ", fraction_bits)
 
-    fraction_val = convert_bin_to_fraction(fraction_bits)
-    #print("fraction_val: ", fraction_val)
+    fraction_val_raw = convert_bin_to_fraction(fraction_bits)
+    print("fraction_val_raw: ", fraction_val_raw)
+    useed = 2**(2**es)
+    fraction_val = fraction_val_raw/(useed)
+    
+
+    
+    print("fraction_val: ", fraction_val)
 
     fraction_factor = (1 + float(fraction_val))
-    #print("fraction_factor: ", fraction_factor)
+    print("fraction_factor: ", fraction_factor)
     
-    #print("first_scale_factor: ", first_scale_factor, "second_scale_factor: ", second_scale_factor, "last_factor: ", fraction_factor  )
+    if (regime_length == 1 and regime_sign == -1 ):
+        print("!!!!!!!!!!!!!!!!!!!!print got here here")
+        #second_scale_factor = second_scale_factor/useed
+        fraction_factor = fraction_factor/ second_scale_factor
+    
+    print("first_scale_factor: ", first_scale_factor, "second_scale_factor: ", second_scale_factor, "last_factor: ", fraction_factor  )
+    
+
+    
     
     expression_val = sign * first_scale_factor * second_scale_factor * fraction_factor
-    #print("expression_val", expression_val)
+    print("expression_val", expression_val)
 
     return expression_val
 
@@ -426,7 +526,7 @@ def test_conversions():
         print("onbtained posit value: ", posit_value )
         print("converting posit ",posit_value, "back to float " )
         float_point_value = convert_posit_to_float(3, posit_value)
-        print("onbtained float point value: ", float_point_value )
+        print("obtained float point value: ", float_point_value )
         print("diff in floats before & after posit conversion: ", num - float_point_value)
         print("-------------------------\n")
         print("converting float:", num, " to fixed point num")
