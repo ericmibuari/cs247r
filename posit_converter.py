@@ -14,7 +14,7 @@ class PositConverter:
         self.num_frac_bits = frac_bits
         self.es = useed_es
 
-    #Reverses a string - used by the integee to binary conversion function
+    #Reverses a string - used by the integer to binary conversion function
     def reverse_string(self, input_string):
         new_string = ""
         for i in range(len(input_string)):
