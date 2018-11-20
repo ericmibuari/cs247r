@@ -83,7 +83,7 @@ class PositConverter:
         posit_num = self.convert_float_to_posit(float_val)
         return posit_num
 
-    #There are to exceptional cases for which the posit conversions are easy(zero and infinity)
+    #There are two exceptional cases for which the posit conversions are easy(zero and infinity)
     #Refer to the posit paper for details
     def create_except_case_string(self,start_bit, num_bits):
         ret_str = start_bit
@@ -131,13 +131,13 @@ class PositConverter:
         exponent_bits, fraction_bits = self.get_exponent_and_frac_bits(dividend,useed,es,nbits, regime_length)
         return regime_length, exponent_bits, fraction_bits
 
-    #TODPO - rename the variables in the next few functions to make the code more readable
+    #TODO - rename the variables in the next few functions to make the code more readable
+    #TODO - collapse and reuse functions instead of multiple "similar" functions
     def find_d_regular(self, h):
         power = 0
         es = self.es
         while True:
             val = 2**(2**es) ** power
-            #if (val > h/2 and val < h ):
             if (val > h):
                 break;
             power = power +1
@@ -157,7 +157,6 @@ class PositConverter:
         #find a d such that 256^d covers x
         d = self.find_d_regular(abs_x)
         
-
         #TODO: See if you can get more accuracy by playing with powers of 2. Right now we are setting power of 2 to zero by default
         c = 1
         y = 0
@@ -175,7 +174,7 @@ class PositConverter:
         available_bits_for_frac_remainder = num_bits - (1 +len(regime_bits) + len(exponent_bits))
         fractional_bits = self.convert_fractional_decimal_to_bin(b, available_bits_for_frac_remainder)
         posit_string = str(sign_bit) + regime_bits + exponent_bits + fractional_bits
-        #TODO: REVERSE STRING TO BE IN POSIT FORMAT.
+        #TODO: Do we need to REVERSE STRING TO BE IN POSIT FORMAT?
         return posit_string
 
     def find_d (self, h):
@@ -196,7 +195,7 @@ class PositConverter:
                 return (c*-1), y
             c = c + 1
 
-    #Takes a number that who inteeger portion is 0 e.g. 0.6446, or -0.7655 and converts it to a posit string
+    #Takes a number whose intgral portion is 0 e.g. 0.6446, or -0.7655 and converts it to a posit string
     def convert_pure_float_to_posit(self, x):
         
         print ("converting pure_float: ", x)
@@ -226,7 +225,7 @@ class PositConverter:
         
         return posit_string
 
-    #Creates the binary string sequence to represent the regime section of the posit sting
+    #Creates the binary string sequence to represent the regime section of the posit string
     #Refer to the posit reference paper (section 1.1) to see the "tally mark" approach adopted
     def create_regime_bits_string(self,regime_length, expo_sign_bit):
         reg_str = ""
@@ -241,7 +240,7 @@ class PositConverter:
     def convert_float_to_posit(self,float_value):
      
         es = self.es
-        #TODO: Determine the above parameters dynamically from the value of the float num provided
+        #TODO (ambitious): Determine the above parameters dynamically from the value of the float num provided
         nbits = self.posit_num_bits
         
         if float_value == 0:
