@@ -5,14 +5,14 @@ import torch
 import math
 
 class PositConverter:
-
-    def __init__(self, num_bits_fixed_point, config_num_int_bits, posit_num_bits,es, frac_bits ):
     
-        self.num_bits_fixed_point = num_bits_fixed_point
-        self.config_num_int_bits = config_num_int_bits
-        self.posit_num_bits = posit_num_bits
-        self.es = es
+    #initialize the class variables
+    def __init__(self, num_bits, useed_es, frac_bits):
+    
+        self.num_bits_fixed_point = num_bits
+        self.posit_num_bits = num_bits
         self.num_frac_bits = frac_bits
+        self.es = useed_es
 
     #Reverses a string - used by the integee to binary conversion function
     def reverse_string(self, input_string):
@@ -23,7 +23,7 @@ class PositConverter:
             new_string += str(val)
         return new_string
 
-    #comvert an integer in base 10 to binary
+    #convert an integer in base 10 to binary
     def convert_int_to_bin(self,float_num, bit_limit):
 
         num_int_bits = bit_limit
@@ -54,7 +54,7 @@ class PositConverter:
 
         return new_string
 
-    #Converts a fractional number in base 10 to it's binary fractional value
+    #Converts a fractional number in base 10 to its binary fractional value
     def convert_fractional_decimal_to_bin(self,fractional_decimal, num_frac_bits):
         result = fractional_decimal
         decimals = ""
@@ -75,7 +75,7 @@ class PositConverter:
     def convert_posit_to_fixed_point_num(self, posit_num, num_int_bits, num_frac_bits):
         float_val = self.convert_posit_to_float(posit_num)
         fixed_point_num = self.convert_float_to_fixed_point (float_val)
-        return float_val
+        return fixed_point_num
     
     #Converts a fixed point number to its posit form
     def convert_fixed_point_num_to_posit(self, fixed_point_num):
@@ -156,6 +156,7 @@ class PositConverter:
         
         #find a d such that 256^d covers x
         d = self.find_d_regular(abs_x)
+        
 
         #TODO: See if you can get more accuracy by playing with powers of 2. Right now we are setting power of 2 to zero by default
         c = 1
@@ -336,7 +337,7 @@ class PositConverter:
     def compute_full_number(self, fraction_val, exponet_val, regime_exponent, regime_length, regime_sign, sign):
 
         es = self.es
-        num = 0
+        #num = 0
         c = regime_exponent
         useed_power = 1
         
@@ -344,14 +345,14 @@ class PositConverter:
             useed_power = 2**((2**es)*(c-1))
         else:
             useed_power = 2**((2**es)*c)
+      
         fract_multiplier = 1+fraction_val
 
         if(exponet_val == 0):
             fract_multiplier = fraction_val
 
-        num = sign * useed_power * (2**exponet_val) *fract_multiplier
-        first_scale_factor = useed_power
         second_scale_factor =  2**exponet_val
+        num = sign * useed_power * second_scale_factor * fract_multiplier
         return num
 
     #Converts a posit binary sequence into it's decimal value equivalent
@@ -372,7 +373,6 @@ class PositConverter:
             posit_string = self.twos_complement(posit_string)
         
         regime_length, regime_sign = self.get_lengths(posit_string)
-
         first_scale_factor = 1
         regime_exponent = regime_length
         
@@ -384,8 +384,8 @@ class PositConverter:
         exponent_bits = posit_string[int(regime_length+2):int(end_exponent_bits_index)]
         exponent_val = self.convert_bin_to_int(exponent_bits)
         second_scale_factor = 2**exponent_val
+        
         fraction_bits = posit_string[end_exponent_bits_index:len(posit_string)]
-
         fraction_val_raw = self.convert_bin_to_fraction(fraction_bits)
         fraction_val = fraction_val_raw
         expression_val = self.compute_full_number(fraction_val, exponent_val, regime_exponent, regime_length, regime_sign, sign)
@@ -438,16 +438,20 @@ class PositConverter:
             integral_part = int(abso_val)
             fractional_part = abso_val - integral_part
         
-        int_bin_string = self.convert_int_to_bin(integral_part, self.config_num_int_bits)
+        #TODO, determine which among the the fractioal or integral parts needs more bits
+        #int_bin_string = self.convert_int_to_bin(integral_part, self.config_num_int_bits)
+        #frac_bin_string = self.convert_fractional_decimal_to_bin(fractional_part, self.num_frac_bits)
+        
+        int_bin_string = self.convert_int_to_bin(integral_part, self.posit_num_bits - self.num_frac_bits )
         frac_bin_string = self.convert_fractional_decimal_to_bin(fractional_part, self.num_frac_bits)
-
+    
         return fp_sign + int_bin_string +"." + frac_bin_string
 
     #A function with some sample back and forth conversions between various formats
     def sample_conversions(self):
 
         test_numbers = [-2.0, -1.9865, -0.755, 3.55393e-06, 3.553926944732666e-06, 3.553926946732666e-06, 2.08975757675, -0.755343,  0.2355343]
-        #test_numbers = [-0.755343]
+        #test_numbers = [-1.9865]
         #test_numbers = [2.08975757675]
         for i in range(len(test_numbers)):
             num = test_numbers[i]
@@ -530,19 +534,24 @@ num_bits_fixed_point = 16
 config_num_int_bits = 16
 posit_num_bits = 16
 num_frac_bits = 5
-"""
-"""
-num_bits_fixed_point = 8
-config_num_int_bits = 8
-posit_num_bits = 8
-num_frac_bits = 3
-es = 2
+es = 3
 
-pconv = PositConverter(num_bits_fixed_point, config_num_int_bits, posit_num_bits,es, num_frac_bits)
-posit_string = pconv.convert_float_to_posit(1.4347745)
+num_bits = 8
+num_frac_bits = 6
+es = 1
+
+pconv = PositConverter(num_bits, es, num_frac_bits)
+pconv.sample_conversions()
+
+#print(pconv.convert_posit_to_float('11000000'))
+posit_string = pconv.convert_float_to_posit(-1.9865)
 print(posit_string)
 float_num = pconv.convert_posit_to_float(posit_string)
 print(float_num)
 
-pconv.sample_conversions()
+
+posit_string = pconv.convert_float_to_posit(1.4347745)
+print(posit_string)
+float_num = pconv.convert_posit_to_float(posit_string)
+print(float_num)
 """
