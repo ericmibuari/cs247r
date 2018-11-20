@@ -71,7 +71,7 @@ class PositConverter:
         
         return decimals
 
-    #Converts a posit string into it's fixed point representation
+    #Converts a posit string into its fixed point representation
     def convert_posit_to_fixed_point_num(self, posit_num, num_int_bits, num_frac_bits):
         float_val = self.convert_posit_to_float(posit_num)
         fixed_point_num = self.convert_float_to_fixed_point (float_val)
@@ -236,7 +236,7 @@ class PositConverter:
         reg_str += str(expo_sign_bit)
         return reg_str
 
-    # Converts a number in base 10 to it's posit string format. The number may be an integer or a float
+    # Converts a number in base 10 to its posit string format. The number may be an integer or a float
     #Reference: posit paper section 4 "Converting values into posits"
     def convert_float_to_posit(self,float_value):
      
@@ -278,7 +278,7 @@ class PositConverter:
         
         return final_string
 
-    #Converts a base 2 (binary) number to it's base 10 integer format
+    #Converts a base 2 (binary) number to its base 10 integer format
     def convert_bin_to_int(self,bin_string):
         len_bin = len(bin_string)
         sum = 0
@@ -289,7 +289,7 @@ class PositConverter:
             sum += val
         return sum
 
-    #Converts a base 2 (binary) number to it's base 10 fractional format
+    #Converts a base 2 (binary) number to its base 10 fractional format
     def convert_bin_to_fraction(self, bin_string):
         len_bin = len(bin_string)
         sum = 0
@@ -355,7 +355,7 @@ class PositConverter:
         num = sign * useed_power * second_scale_factor * fract_multiplier
         return num
 
-    #Converts a posit binary sequence into it's decimal value equivalent
+    #Converts a posit binary sequence into its decimal value equivalent
     #Reference: posit paper section 1.2
     def convert_posit_to_float(self,posit_string):
         
@@ -392,7 +392,7 @@ class PositConverter:
 
         return expression_val
 
-    #Converts a fixed point number into it's float equivalent
+    #Converts a fixed point number into its float equivalent
     def convert_fixed_point_to_float(self,fixed_point_num):
         fixed_point_num_string = str(fixed_point_num)
         sign = int(fixed_point_num_string[0])
@@ -420,7 +420,7 @@ class PositConverter:
 
         return total_float
 
-    #Converts a floating point number into it's fixed point equivalent
+    #Converts a floating point number into its fixed point equivalent
     def convert_float_to_fixed_point(self, float_num):
         fp_sign = ""
         abso_val = float_num
